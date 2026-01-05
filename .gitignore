@@ -1,0 +1,61 @@
+# .gitignore for a Python (PyPI) package
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+*.pyd
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+wheelhouse/
+*.egg
+*.whl
+
+# Virtual environments
+.env/
+.venv/
+venv/
+ENV/
+env/
+
+# Test / coverage / tox
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Cache / mypy / pip
+.cache/
+.mypy_cache/
+.dmypy.json
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE / editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Sphinx / docs
+docs/_build/
+
+# Flask / Django / local config
+instance/
+local_settings.py
+db.sqlite3
+
+# Misc
+.DS_Store
+Thumbs.db
+.env
