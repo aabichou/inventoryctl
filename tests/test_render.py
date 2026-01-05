@@ -25,7 +25,7 @@ inventory_groups:
 
     assert "Host myhost" in captured.out
     assert "HostName 1.2.3.4" in captured.out
-    assert "IdentityFile" in captured.out
+    assert "IdentityFile ~/.ssh/id_rsa" in captured.out
     assert "ProxyJump gw.example" in captured.out
     assert "LocalForward 9000 127.0.0.1:9000" in captured.out
 

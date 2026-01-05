@@ -91,13 +91,9 @@ def render_ssh(
             if user_val:
                 print(f"  User {user_val}")
 
-            # IdentityFile (expand ~)
+            # IdentityFile (do not expand ~, use as-provided)
             if identity_file:
-                try:
-                    identity_expanded = os.path.expanduser(identity_file)
-                except Exception:
-                    identity_expanded = identity_file
-                print(f"  IdentityFile {identity_expanded}")
+                print(f"  IdentityFile {identity_file}")
 
             # Parse ProxyJump out of ansible_ssh_common_args robustly (support quoted values)
             if common_args:
