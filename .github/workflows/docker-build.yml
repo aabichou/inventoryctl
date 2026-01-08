@@ -3,12 +3,14 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [main, dev, staging, prod]
-    tags:
-      - "v*.*.*"
     paths-ignore:
       - "**/*.yml"
       - "**/*.yaml"
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Publish to PyPI"]
+    types:
+      - completed
 
 env:
   REGISTRY: ghcr.io
@@ -17,6 +19,10 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Only run if workflow_run was successful or if triggered by push/workflow_dispatch
+    if: |
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: read
       packages: write
@@ -55,13 +61,53 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            # Extract version from the tag that triggered PyPI publish
+            TAG_REF="${{ github.event.workflow_run.head_branch }}"
+            if [[ "$TAG_REF" == v*.*.* ]]; then
+              VERSION="${TAG_REF#v}"
+              echo "version=$VERSION" >> $GITHUB_OUTPUT
+              echo "is_release=true" >> $GITHUB_OUTPUT
+            else
+              echo "version=dev" >> $GITHUB_OUTPUT
+              echo "is_release=false" >> $GITHUB_OUTPUT
+            fi
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF#refs/tags/}"
             VERSION="${VERSION#v}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
           else
             echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
           fi
+
+      # Wait for PyPI package to be available when building a release
+      - name: Wait for PyPI package availability
+        if: steps.version.outputs.is_release == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Waiting for inventoryctl==$VERSION to be available on PyPI..."
+
+          MAX_ATTEMPTS=30
+          SLEEP_TIME=10
+
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "Attempt $i/$MAX_ATTEMPTS: Checking PyPI..."
+            
+            if pip index versions inventoryctl 2>/dev/null | grep -q "$VERSION"; then
+              echo "✅ Found version $VERSION on PyPI!"
+              exit 0
+            fi
+            
+            if [ $i -lt $MAX_ATTEMPTS ]; then
+              echo "Version $VERSION not yet available, waiting ${SLEEP_TIME}s..."
+              sleep $SLEEP_TIME
+            fi
+          done
+
+          echo "⚠️  Version $VERSION not found on PyPI after $((MAX_ATTEMPTS * SLEEP_TIME)) seconds"
+          echo "Proceeding anyway - Docker build may fail if package is not available"
 
       - name: Extract Docker metadata
         id: meta
