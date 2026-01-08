@@ -60,9 +60,8 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          # Uses OIDC trusted publishing - no token needed!
-          # Configure at: https://pypi.org/manage/account/publishing/
+        # Uses OIDC trusted publishing - no token needed!
+        # Configure at: https://pypi.org/manage/account/publishing/
 
   publish-to-test-pypi:
     name: Publish to TestPyPI
